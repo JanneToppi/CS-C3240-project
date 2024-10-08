@@ -8,7 +8,8 @@ import seaborn as sns
 from PIL import Image
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.preprocessing import LabelEncoder
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report, confusion_matrix
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report, \
+    confusion_matrix
 from sklearn.decomposition import PCA
 from sklearn.neighbors import KNeighborsClassifier
 import tensorflow as tf
@@ -16,66 +17,72 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
-data_dir = ???
-def load_images(data_dir) = 
+data_dir = ""
+
+
+def load_images(data_dir):
     images = []
     labels = []
-    
+
     for label, folder in enumerate(["no_ship", "ship"]):
         folder_path = os.path.join(data_dir, folder)
         for img_path in os.listdir(folder_path):
             img_path = os.path.join(folder_path, img_path)
             img = Image.open(img_path).convert('RGB')
-            img = img.resize((80,80))
+            img = img.resize((80, 80))
             img_array = np.array(img)
             images.append(img_array)
             labels.append(label)
     return np.array(images), np.array(labels)
 
-#load images
+
+def to_categorical(labels):
+    # TODO
+    return 0
+
+
+# load images
 images, labels = load_images(data_dir)
 
-#normalize the pixel values to [0,1]
-images = image / 255.0
+# normalize the pixel values to [0,1]
+images = images / 255.0
 
 # convert labels to categorical 
 labels = to_categorical(labels)
 
-
 # First split: Train (80%) and Temp (20%)
 X_train, X_temp, y_train, y_temp = train_test_split(
-    images, 
-    labels_categorical, 
-    test_size=0.2, 
-    random_state=42, 
+    images,
+    labels,
+    test_size=0.2,
+    random_state=42,
     stratify=labels
 )
 
 # Second split: Validation (10%) and Test (10%) from Temp
 X_val, X_test, y_val, y_test = train_test_split(
-    X_temp, 
-    y_temp, 
-    test_size=0.5, 
-    random_state=42, 
+    X_temp,
+    y_temp,
+    test_size=0.5,
+    random_state=42,
     stratify=y_temp
 )
 
-#spilt for KNN
+# spilt for KNN
 y_train_knn = y_train.argmax(axis=1)
 y_val_knn = y_val.argmax(axis=1)
 y_test_knn = y_test.argmax(axis=1)
 
-??
+# ??
 # Now we have have: tarkista vielä KNN split
 # - X_train, y_train for training the CNN
 # - X_val, y_val for validating the CNN
 # - X_test, y_test for testing the CNN
 # - y_train_knn, y_val_knn, y_test_knn for KNN
-??
+# ??
 
 
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-#data augmentetion
+# data augmentation
 datagen = ImageDataGenerator(
     rotation_range=20,
     horizontal_flip=True,
@@ -86,7 +93,6 @@ datagen = ImageDataGenerator(
 
 # Fit the data generator on the training data
 datagen.fit(X_train)
-
 
 # Build the CNN model
 model = Sequential()
@@ -150,7 +156,7 @@ print(classification_report(y_true, y_pred_classes, target_names=['No Ship', 'Sh
 
 # Confusion Matrix
 cm = confusion_matrix(y_true, y_pred_classes)
-plt.figure(figsize=(6,4))
+plt.figure(figsize=(6, 4))
 sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=['No Ship', 'Ship'], yticklabels=['No Ship', 'Ship'])
 plt.ylabel('Actual')
 plt.xlabel('Predicted')
@@ -158,7 +164,7 @@ plt.title('Confusion Matrix')
 plt.show()
 
 # Plot training & validation accuracy values
-plt.figure(figsize=(14,5))
+plt.figure(figsize=(14, 5))
 
 plt.subplot(1, 2, 1)
 plt.plot(history.history['accuracy'], label='Train Accuracy', marker='o')
