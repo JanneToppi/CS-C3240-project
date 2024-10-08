@@ -187,3 +187,90 @@ plt.legend(loc='upper right')
 
 plt.tight_layout()
 plt.show()
+
+
+# ------------------- K-Nearest Neighbors (KNN) Model -------------------
+
+# Flatten images for KNN
+X_train_knn = X_train.reshape(X_train.shape[0], -1)
+X_val_knn = X_val.reshape(X_val.shape[0], -1)
+X_test_knn = X_test.reshape(X_test.shape[0], -1)
+
+# Feature Scaling
+scaler = StandardScaler()
+X_train_knn = scaler.fit_transform(X_train_knn)
+X_val_knn = scaler.transform(X_val_knn)
+X_test_knn = scaler.transform(X_test_knn)
+
+# Dimensionality Reduction using PCA
+pca = PCA(n_components=50, random_state=42)  # Adjust n_components as needed
+X_train_pca = pca.fit_transform(X_train_knn)
+X_val_pca = pca.transform(X_val_knn)
+X_test_pca = pca.transform(X_test_knn)
+
+print(f"Explained variance by 50 components: {np.sum(pca.explained_variance_ratio_):.2f}")
+
+# Combine training and validation sets for KNN training
+X_knn_train = np.vstack((X_train_pca, X_val_pca))
+y_knn_train = np.concatenate((y_train_knn, y_val_knn))
+
+# Hyperparameter Tuning for KNN using GridSearchCV
+param_grid = {
+    'n_neighbors': list(range(1, 31)),
+    'weights': ['uniform', 'distance'],
+    'metric': ['euclidean', 'manhattan']
+}
+
+knn = KNeighborsClassifier()
+
+grid_search = GridSearchCV(knn, param_grid, cv=5, scoring='accuracy', n_jobs=-1)
+grid_search.fit(X_knn_train, y_knn_train)
+
+print(f"Best KNN parameters: {grid_search.best_params_}")
+print(f"Best KNN cross-validation accuracy: {grid_search.best_score_:.4f}")
+
+# Best KNN model
+best_knn = grid_search.best_estimator_
+
+# Evaluate KNN on Test Set
+y_pred_knn = best_knn.predict(X_test_pca)
+knn_accuracy = accuracy_score(y_test_knn, y_pred_knn)
+knn_precision = precision_score(y_test_knn, y_pred_knn)
+knn_recall = recall_score(y_test_knn, y_pred_knn)
+knn_f1 = f1_score(y_test_knn, y_pred_knn)
+
+print("\nKNN Classification Report:")
+print(classification_report(y_test_knn, y_pred_knn, target_names=['No Ship', 'Ship']))
+
+# Confusion Matrix for KNN
+cm_knn = confusion_matrix(y_test_knn, y_pred_knn)
+plt.figure(figsize=(6, 4))
+sns.heatmap(cm_knn, annot=True, fmt='d', cmap='Greens', xticklabels=['No Ship', 'Ship'], yticklabels=['No Ship', 'Ship'])
+plt.ylabel('Actual')
+plt.xlabel('Predicted')
+plt.title('KNN Confusion Matrix')
+plt.show()
+
+# Plot KNN Evaluation Metrics
+metrics = ['Accuracy', 'Precision', 'Recall', 'F1 Score']
+cnn_metrics = [
+    accuracy_score(y_true, y_pred_classes_cnn),
+    precision_score(y_true, y_pred_classes_cnn),
+    recall_score(y_true, y_pred_classes_cnn),
+    f1_score(y_true, y_pred_classes_cnn)
+]
+knn_metrics = [knn_accuracy, knn_precision, knn_recall, knn_f1]
+
+x = np.arange(len(metrics))
+width = 0.35
+
+plt.figure(figsize=(10, 6))
+plt.bar(x - width/2, cnn_metrics, width, label='CNN', color='blue')
+plt.bar(x + width/2, knn_metrics, width, label='KNN', color='green')
+
+plt.ylabel('Scores')
+plt.title('Comparison of CNN and KNN Metrics')
+plt.xticks(x, metrics)
+plt.ylim([0, 1])
+plt.legend()
+plt.show()
