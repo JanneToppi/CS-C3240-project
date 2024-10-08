@@ -16,8 +16,10 @@ import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
-
-data_dir = ""
+from tensorflow.keras.utils import to_categorical
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from tensorflow.keras.callbacks import EarlyStopping
+data_dir = "data"
 
 
 def load_images(data_dir):
@@ -36,19 +38,14 @@ def load_images(data_dir):
     return np.array(images), np.array(labels)
 
 
-def to_categorical(labels):
-    # TODO
-    return 0
-
-
 # load images
 images, labels = load_images(data_dir)
 
 # normalize the pixel values to [0,1]
 images = images / 255.0
 
-# convert labels to categorical 
-labels = to_categorical(labels)
+# convert labels to categorical
+labels = to_categorical(labels, num_classes=2)
 
 # First split: Train (80%) and Temp (20%)
 X_train, X_temp, y_train, y_temp = train_test_split(
@@ -73,6 +70,7 @@ y_train_knn = y_train.argmax(axis=1)
 y_val_knn = y_val.argmax(axis=1)
 y_test_knn = y_test.argmax(axis=1)
 
+
 # ??
 # Now we have have: tarkista vielä KNN split
 # - X_train, y_train for training the CNN
@@ -80,6 +78,8 @@ y_test_knn = y_test.argmax(axis=1)
 # - X_test, y_test for testing the CNN
 # - y_train_knn, y_val_knn, y_test_knn for KNN
 # ??
+
+
 
 
 # data augmentation
@@ -136,11 +136,25 @@ datagen = ImageDataGenerator(
 datagen.fit(X_train)
 
 # Train the model
+#history = model.fit(
+#    datagen.flow(X_train, y_train, batch_size=32),
+#    epochs=20,
+#    validation_data=(X_val, y_val)
+#)
+
+early_stopping = EarlyStopping(
+    monitor='val_loss',  # or 'val_accuracy'
+    patience=3,          # Stop training after 3 epochs without improvement
+    restore_best_weights=True  # Restore the weights from the best-performing epoch
+)
+
 history = model.fit(
     datagen.flow(X_train, y_train, batch_size=32),
-    epochs=20,
-    validation_data=(X_val, y_val)
+    epochs=50,  # You can set a large number of epochs, say 50 or 100
+    validation_data=(X_val, y_val),
+    callbacks=[early_stopping]
 )
+
 # Evaluate the model on the test set
 test_loss, test_acc = model.evaluate(X_test, y_test, verbose=2)
 print(f"\nTest Accuracy: {test_acc:.4f}")
@@ -162,6 +176,7 @@ plt.ylabel('Actual')
 plt.xlabel('Predicted')
 plt.title('Confusion Matrix')
 plt.show()
+
 
 # Plot training & validation accuracy values
 plt.figure(figsize=(14, 5))
@@ -189,6 +204,7 @@ plt.tight_layout()
 plt.show()
 
 
+
 # ------------------- K-Nearest Neighbors (KNN) Model -------------------
 
 # Flatten images for KNN
@@ -207,6 +223,7 @@ pca = PCA(n_components=50, random_state=42)  # Adjust n_components as needed
 X_train_pca = pca.fit_transform(X_train_knn)
 X_val_pca = pca.transform(X_val_knn)
 X_test_pca = pca.transform(X_test_knn)
+
 
 print(f"Explained variance by 50 components: {np.sum(pca.explained_variance_ratio_):.2f}")
 
@@ -232,6 +249,7 @@ print(f"Best KNN cross-validation accuracy: {grid_search.best_score_:.4f}")
 # Best KNN model
 best_knn = grid_search.best_estimator_
 
+
 # Evaluate KNN on Test Set
 y_pred_knn = best_knn.predict(X_test_pca)
 knn_accuracy = accuracy_score(y_test_knn, y_pred_knn)
@@ -254,10 +272,10 @@ plt.show()
 # Plot KNN Evaluation Metrics
 metrics = ['Accuracy', 'Precision', 'Recall', 'F1 Score']
 cnn_metrics = [
-    accuracy_score(y_true, y_pred_classes_cnn),
-    precision_score(y_true, y_pred_classes_cnn),
-    recall_score(y_true, y_pred_classes_cnn),
-    f1_score(y_true, y_pred_classes_cnn)
+    accuracy_score(y_true, y_pred_classes),
+    precision_score(y_true, y_pred_classes),
+    recall_score(y_true, y_pred_classes),
+    f1_score(y_true, y_pred_classes)
 ]
 knn_metrics = [knn_accuracy, knn_precision, knn_recall, knn_f1]
 
