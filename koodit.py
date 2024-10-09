@@ -71,14 +71,12 @@ y_val_knn = y_val.argmax(axis=1)
 y_test_knn = y_test.argmax(axis=1)
 
 
-# ??
+
 # Now we have have: tarkista vielä KNN split
 # - X_train, y_train for training the CNN
 # - X_val, y_val for validating the CNN
 # - X_test, y_test for testing the CNN
 # - y_train_knn, y_val_knn, y_test_knn for KNN
-# ??
-
 
 
 
@@ -135,19 +133,20 @@ datagen = ImageDataGenerator(
 # Fit the data generator on the training data
 datagen.fit(X_train)
 
-# Train the model
+# Train the model (without stopper)
 #history = model.fit(
 #    datagen.flow(X_train, y_train, batch_size=32),
 #    epochs=20,
 #    validation_data=(X_val, y_val)
 #)
 
+#stopper for optimal epoch
 early_stopping = EarlyStopping(
     monitor='val_loss',  # or 'val_accuracy'
     patience=3,          # Stop training after 3 epochs without improvement
     restore_best_weights=True  # Restore the weights from the best-performing epoch
 )
-
+# Train the model
 history = model.fit(
     datagen.flow(X_train, y_train, batch_size=32),
     epochs=50,  # You can set a large number of epochs, say 50 or 100
