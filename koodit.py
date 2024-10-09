@@ -19,6 +19,9 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.utils import to_categorical
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from tensorflow.keras.callbacks import EarlyStopping
+
+
+
 data_dir = "data"
 
 
@@ -35,6 +38,7 @@ def load_images(data_dir):
             img_array = np.array(img)
             images.append(img_array)
             labels.append(label)
+            
     return np.array(images), np.array(labels)
 
 
@@ -72,7 +76,7 @@ y_test_knn = y_test.argmax(axis=1)
 
 
 
-# Now we have have: tarkista vielä KNN split
+# Now we have have: 
 # - X_train, y_train for training the CNN
 # - X_val, y_val for validating the CNN
 # - X_test, y_test for testing the CNN
